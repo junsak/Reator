@@ -35,6 +35,8 @@
  *                         -Acrescentado um código simples para leitura da condutividade 
  *                         -Leitura do sensor de nível 
  *                         -Modificação na exibição de dados
+ *                         
+ *  Versão 1.1 18/09/2018: -Ajuste do código                        
  */
 
 //#######################################################################################################################
@@ -72,7 +74,7 @@
 
 // Sensor de nível
 #define sensor_nivel A0
-#define sensor_referencia A1
+#define sensor_nivel_referencia A1
 
 
 //#######################################################################################################################
@@ -90,11 +92,10 @@ DeviceAddress ENDERECO_SENSOR_TEMPERATURA;
 
 //Define as chaves de controle
 boolean CH_LIGA_BOMBA1 = 0;
-boolean CH_LIBERA_SENSOR_ULTRASSONICO = 0;
 boolean CH_LIBERA_SENSOR_TEMPERATURA = 0;
 boolean CH_RESISTENCIA = 0;
-boolean CH_HABILITA_AGITADOR = 0;
-boolean CH_SENSOR_NIVEL = 0;
+boolean CH_HABILITA_AGITADOR = 1;
+boolean CH_SENSOR_NIVEL = 1;
 boolean CH_CONDUTIVIMETRO = 0;
 
 //#######################################################################################################################
@@ -110,6 +111,8 @@ unsigned long VOLUME;
 float TempoAtual = 0;
 int aux = 0, passo = 5000;
 
+float NIVEL_CALCULADO;
+
 void setup() 
 { 
   
@@ -120,15 +123,17 @@ void setup()
    sensors.begin();
    sensors.getAddress(ENDERECO_SENSOR_TEMPERATURA, 0);
 
-   // Configura o agitador
 
    pinMode(velocidade_bomba1, OUTPUT);
    pinMode(resistencia, OUTPUT);
 
-   // Configura os pinos do Agitador
-
    pinMode(step_agitador, OUTPUT);
    pinMode(sentido_agitador, OUTPUT);
+
+   pinMode(sensor_nivel, INPUT);
+   pinMode(sensor_nivel_referencia, INPUT);
+
+   
 }
 
 void loop() 
@@ -169,7 +174,7 @@ void le_informacao()
                     PWM_BOMBA1 = Serial.parseInt();
                     break;
         case 'T':
-                    TEMPERATURA_RESISTENCIA = Serial.parseInt();
+                    TEMPERATURA_RESISTENCIA = Serial.parseFloat();
                     break;
         case 'A':   
                     VELOCIDADE_AGITADOR = Serial.parseInt(); //faixa recomendada 200 - 800
@@ -214,11 +219,17 @@ void le_nivel()
 {
   NIVEL = analogRead(A0);
   NIVEL_REFERENCIA = analogRead(A1);
+  NIVEL_CALCULADO = calculaNivel();
 }
 
 void le_condutividade()
 {
   CONDUTIVIDADE = analogRead(A3);
+}
+
+float calculaNivel()
+{
+  return float((NIVEL-370)/60);
 }
 
 void exibe_dados()
@@ -255,6 +266,9 @@ void exibe_dados()
 
     Serial.print(" Referência: ");
     Serial.print(NIVEL_REFERENCIA);
+
+    Serial.print(" Nivel apoximado: ");
+    Serial.print(NIVEL_CALCULADO);
   }
   
   if(CH_CONDUTIVIMETRO)
