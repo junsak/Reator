@@ -4,39 +4,7 @@
  *  
  *  Autor: Julian Jose de Brito
  *  
- *  Versão 0.1 15/03/2018: -Controle PWM do motore DC (bomba).
- *                         -Implementação dos sensores ultrassônicos.
- *                         
- *  Versão 0.3 19/03/2018: -Implementação do sensor de temperatura
- *                         incluindo a exibição do sinal. 
- *                        
- *  Versão 0.4 20/03/2018: -Controle PWM da resistência                     
- *                         -Modificação no nome de algumas variávies.
- *           
- *  Versão 0.5 20/03/2018: -Correções no controle do módulo de acionamento
- *                          do motor de passo.
- *                         -Modificações no nome de variáveis para facilitar 
- *                          a legibilidade do código.
- *         
- *  Versão 0.6 20/03/2018: -Controle simples da temperatura, usando a leitura do sensor       
- *                          de temperatura
- *                         -Melhora na interface com o usuário via Serial. 
- * 
- *  Versão 0.7 26/03/2018: -Implementação da medida indireta do volume (Ainda não funcionou... mas funcionará!)                        
- *  
- *  
- *  Verção 0.8 27/03/2018: -Função de exibição de dados.
- *         
- *         
- *  Versão 0.9 16/08/2018: -Impressão de Tempo/Temperatura                       
- *                             
- *  Versão 1   11/09/2018: -Remoção de partes que não deram certo, como as relacionadas ao sendo ultrassonico.                       
- *                         -Melhoria na legibilidade do código
- *                         -Acrescentado um código simples para leitura da condutividade 
- *                         -Leitura do sensor de nível 
- *                         -Modificação na exibição de dados
- *                         
- *  Versão 1.1 18/09/2018: -Ajuste do código                        
+ *  Versão 1.3 05/10/2018: -Exclusão da referência de nível
  */
 
 //#######################################################################################################################
@@ -74,7 +42,6 @@
 
 // Sensor de nível
 #define sensor_nivel A0
-#define sensor_nivel_referencia A1
 
 
 //#######################################################################################################################
@@ -91,27 +58,25 @@ DeviceAddress ENDERECO_SENSOR_TEMPERATURA;
 // PAINEL DE CONTROLE
 
 //Define as chaves de controle
-boolean CH_LIGA_BOMBA1 = 0;
+boolean CH_LIGA_BOMBA1 = 6;
 boolean CH_LIBERA_SENSOR_TEMPERATURA = 0;
 boolean CH_RESISTENCIA = 0;
-boolean CH_HABILITA_AGITADOR = 1;
+boolean CH_HABILITA_AGITADOR = 0;
 boolean CH_SENSOR_NIVEL = 1;
 boolean CH_CONDUTIVIMETRO = 0;
 
 //#######################################################################################################################
 // VARIÁVEIS DO SISTEMA
 
-float TEMPERATURA, NIVEL, NIVEL_REFERENCIA, CONDUTIVIDADE;
+float TEMPERATURA, NIVEL, CONDUTIVIDADE;
 int VELOCIDADE_AGITADOR = 50, TEMPERATURA_RESISTENCIA = 50, PWM_BOMBA1 = 0;
 
 unsigned long time;
 unsigned long TEMPO_ATUAL;
-unsigned long VOLUME;
 
-float TempoAtual = 0;
-int aux = 0, passo = 5000;
+int i = 0, INDEX = 0, INDEX2 = 0;
 
-float NIVEL_CALCULADO;
+float LEITURA_NIVEL_MEDIA, NIVEL_APROXIMADO, LEITURAS_NIVEL[20], VOLUME, VOLUMES[50], LEITURAS[50], ERROS[50], META = 0;
 
 void setup() 
 { 
@@ -131,7 +96,15 @@ void setup()
    pinMode(sentido_agitador, OUTPUT);
 
    pinMode(sensor_nivel, INPUT);
-   pinMode(sensor_nivel_referencia, INPUT);
+
+   for(i = 0; i<20; i++)
+      LEITURAS_NIVEL[i] = 0;
+   for(i = 0; i<50; i++)
+   {
+     VOLUMES[i] = 1;
+     LEITURAS[i] = 0;
+     ERROS[i] = 0;
+   }
 
    
 }
@@ -178,7 +151,26 @@ void le_informacao()
                     break;
         case 'A':   
                     VELOCIDADE_AGITADOR = Serial.parseInt(); //faixa recomendada 200 - 800
-                      
+                    
+        case 'L':   
+                    VOLUME = Serial.parseFloat();
+                    VOLUMES[INDEX2] = VOLUME;
+                    LEITURAS[INDEX2] = LEITURA_NIVEL_MEDIA;
+                    INDEX2++;
+                    break;
+        case 'I':  
+                    Serial.println("Volumes: Leitura: Erro:");
+                    for(i=0; i<INDEX2; i++){
+                      Serial.print(VOLUMES[i]);
+                      Serial.print(" ");
+                      Serial.print(LEITURAS[i]); 
+                      Serial.println(" ");
+                    }
+                    break;
+         
+        case 'F':          
+                    META = Serial.parseFloat();
+                    
         default:
                     break;
 
@@ -189,7 +181,18 @@ void le_informacao()
 
 void liga_motor()
 {
+  
+  if(META > 0)
+  {
+    if(LEITURA_NIVEL_MEDIA < META)
+    analogWrite(velocidade_bomba1, 5);
+    
+    else
+    analogWrite(velocidade_bomba1, 0);
+  }
+  else
   analogWrite(velocidade_bomba1, PWM_BOMBA1);
+  
 }
 
 
@@ -218,8 +221,14 @@ void aciona_agitador()
 void le_nivel()
 {
   NIVEL = analogRead(A0);
-  NIVEL_REFERENCIA = analogRead(A1);
-  NIVEL_CALCULADO = calculaNivel();
+  LEITURA_NIVEL_MEDIA = calculaMediaNivel(LEITURA_NIVEL_MEDIA);
+
+  if(LEITURA_NIVEL_MEDIA > 60 && LEITURA_NIVEL_MEDIA < 75)
+   NIVEL_APROXIMADO = 1;
+  else
+  {
+    NIVEL_APROXIMADO = LEITURA_NIVEL_MEDIA*0,05;
+  }
 }
 
 void le_condutividade()
@@ -227,9 +236,28 @@ void le_condutividade()
   CONDUTIVIDADE = analogRead(A3);
 }
 
-float calculaNivel()
+float calculaMediaNivel(float leitura_media_anterior)
 {
-  return float((NIVEL-370)/60);
+  // Calcula média das leituras do sensor de nível
+  
+  float total = 0, media;
+  
+  LEITURAS_NIVEL[INDEX] = NIVEL;
+  INDEX++;
+
+  if(INDEX > 20)
+    INDEX = 0;
+
+  for(i = 0; i<20; i++)
+    total+= LEITURAS_NIVEL[i];
+
+  media = total/20;
+
+  //filtra o valor da média com base em uma variação de valor = 6
+  if(!((media >= leitura_media_anterior+1) ||  (media <= leitura_media_anterior-1)))
+    media = leitura_media_anterior;
+  
+  return media;
 }
 
 void exibe_dados()
@@ -261,14 +289,14 @@ void exibe_dados()
 
   if(CH_SENSOR_NIVEL)
   {
-    Serial.print(" Nivel: ");
-    Serial.print(NIVEL);
+    Serial.print(" Nivel Médio: ");
+    Serial.print(LEITURA_NIVEL_MEDIA);
 
-    Serial.print(" Referência: ");
-    Serial.print(NIVEL_REFERENCIA);
+//    Serial.print(" Referência: ");
+//    Serial.print(NIVEL_REFERENCIA);
 
     Serial.print(" Nivel apoximado: ");
-    Serial.print(NIVEL_CALCULADO);
+    Serial.print(NIVEL_APROXIMADO);
   }
   
   if(CH_CONDUTIVIMETRO)
