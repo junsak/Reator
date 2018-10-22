@@ -1,0 +1,43 @@
+/*  Reator: Programa feito para o controle de um reator do tipo
+ *  batelada. O programa faz a supervisão de alguns sensores e 
+ *  envia sinais de controle para alguns motores e uma resistência. 
+ *  
+ *  Autor: Julian Jose de Brito
+ *  
+ *  Versão 0.1 15/03/2018: -Controle PWM do motore DC (bomba).
+ *                         -Implementação dos sensores ultrassônicos.
+ *                         
+ *  Versão 0.3 19/03/2018: -Implementação do sensor de temperatura
+ *                         incluindo a exibição do sinal. 
+ *                        
+ *  Versão 0.4 20/03/2018: -Controle PWM da resistência                     
+ *                         -Modificação no nome de algumas variávies.
+ *           
+ *  Versão 0.5 20/03/2018: -Correções no controle do módulo de acionamento
+ *                          do motor de passo.
+ *                         -Modificações no nome de variáveis para facilitar 
+ *                          a legibilidade do código.
+ *         
+ *  Versão 0.6 20/03/2018: -Controle simples da temperatura, usando a leitura do sensor       
+ *                          de temperatura
+ *                         -Melhora na interface com o usuário via Serial. 
+ * 
+ *  Versão 0.7 26/03/2018: -Implementação da medida indireta do volume (Ainda não funcionou... mas funcionará!)                        
+ *  
+ *  
+ *  Verção 0.8 27/03/2018: -Função de exibição de dados.
+ *         
+ *         
+ *  Versão 0.9 16/08/2018: -Impressão de Tempo/Temperatura                       
+ *                             
+ *  Versão 1   11/09/2018: -Remoção de partes que não deram certo, como as relacionadas ao sendo ultrassonico.                       
+ *                         -Melhoria na legibilidade do código
+ *                         -Acrescentado um código simples para leitura da condutividade 
+ *                         -Leitura do sensor de nível 
+ *                         -Modificação na exibição de dados
+ *                         
+ *  Versão 1.1 18/09/2018: -Ajuste do código                        
+ *  
+ *  Versão 1.2 03/10/2018: -Calculo de média, nas leituras do sensor de nível.
+ *  
+ *  Versão 1.3 05/10/2018: -Exclusão da referência de nível
