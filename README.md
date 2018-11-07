@@ -1,1 +1,1 @@
-Este é um programa feito para o controle de um reator feito para Arduino Mega.
+Este é um programa para Arduino Mega, feito para controlar um reator.
