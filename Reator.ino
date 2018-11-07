@@ -4,7 +4,6 @@
  *
  *  Autor: Julian Jose de Brito
  *
- *  Versão 1.3 05/10/2018: -Exclusão da referência de nível
  *  Versão 1.4 01/11/2018: -Exclusão das linas de codigo relacionadas ao sensor ultrassônico
  *                         -Implementação da função filtro
  */
