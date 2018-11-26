@@ -14,6 +14,7 @@
 //carrega bibliotecas para uso do sensor de temperatura
 #include <OneWire.h> // ler a biblioteca
 #include <DallasTemperature.h> // ler a biblioteca
+#include <TimerFour.h>
 
 //carrega a biblioteca para configurar as interrupções
 //#include <TimerThree.h>
