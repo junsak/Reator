@@ -6,6 +6,8 @@
  *
  *  Versão 1.4 01/11/2018: -Exclusão das linas de codigo relacionadas ao sensor ultrassônico
  *                         -Implementação da função filtro
+ *  Versão 1.5 26/11/2018: -Mudanças para deixar o código mais legível
+ *                         -Conserto em bugs na função filtro
  */
 
 //#######################################################################################################################
@@ -14,33 +16,20 @@
 //carrega bibliotecas para uso do sensor de temperatura
 #include <OneWire.h> // ler a biblioteca
 #include <DallasTemperature.h> // ler a biblioteca
-#include <TimerFour.h>
 
-//carrega a biblioteca para configurar as interrupções
-//#include <TimerThree.h>
+//carrega a biblioteca para as interrupções
+#include <TimerFour.h>
 
 //#######################################################################################################################
 // DEFINIÇÕES DOS PINOS
 
-// Define pinos para o pwm da bomba 1.
-#define velocidade_bomba1 6
-
-// Define o pino de saida para a resistência.
-#define resistencia 7
-
-// Sinal do DS18B20 (sensor de temperatura).
-#define sensor_temperatura 3
-
-// Define os pinos de saida para o motor de passo (agitador).
-#define step_agitador 10
-#define sentido_agitador 11
-
-// Sensor de condutividade
-#define condutivimetro A3
-
-// Sensor de nível
-#define sensor_nivel A0
-
+#define velocidade_bomba1 6 // Define pinos para o pwm da bomba 1.
+#define resistencia 7 // Define o pino de saida para a resistência.
+#define sensor_temperatura 3 // Sinal do DS18B20 (sensor de temperatura).
+#define step_agitador 10 // Define os pinos de saida para o motor de passo (agitador).
+#define sentido_agitador 11 // Pino que define o sentido do agitador
+#define condutivimetro A3 // Sensor de condutividade
+#define sensor_nivel A0 // Sensor de nível
 
 //#######################################################################################################################
 // CONFIGURAÇÕES INICIAIS
@@ -53,11 +42,10 @@ DeviceAddress ENDERECO_SENSOR_TEMPERATURA;
 //#######################################################################################################################
 // PAINEL DE CONTROLE
 
-//Define as chaves de controle
-boolean CH_LIGA_BOMBA1 = 0;
-boolean CH_LIBERA_SENSOR_TEMPERATURA = 0;
-boolean CH_RESISTENCIA = 0;
-boolean CH_HABILITA_AGITADOR = 0;
+boolean CH_LIGA_BOMBA1 = 1;
+boolean CH_LIBERA_SENSOR_TEMPERATURA = 1;
+boolean CH_RESISTENCIA = 1;
+boolean CH_HABILITA_AGITADOR = 1;
 boolean CH_SENSOR_NIVEL = 0;
 boolean CH_CONDUTIVIMETRO = 0;
 
@@ -76,7 +64,6 @@ float NIVEL_APROXIMADO, LEITURAS_NIVEL[20];
 
 void setup()
 {
-
    // Inicializa a comunicação serial
    Serial.begin(9600);
 
@@ -84,48 +71,45 @@ void setup()
    sensors.begin();
    sensors.getAddress(ENDERECO_SENSOR_TEMPERATURA, 0);
 
-
+   // Seta os pinos como saida ou entrada
    pinMode(velocidade_bomba1, OUTPUT);
    pinMode(resistencia, OUTPUT);
-
    pinMode(step_agitador, OUTPUT);
    pinMode(sentido_agitador, OUTPUT);
-
    pinMode(sensor_nivel, INPUT);
-
 }
 
 void loop()
 {
-
   //verifica se algo foi digitado no canal serial
   le_informacao();
 
   if(CH_LIGA_BOMBA1)
-  liga_motor();
+    liga_motor();
 
   if(CH_LIBERA_SENSOR_TEMPERATURA)
-  le_sensor_temperatura();
-
-  aciona_resistencia();
+    le_sensor_temperatura();
 
   if(CH_HABILITA_AGITADOR)
-  aciona_agitador();
-
+    aciona_agitador();
+  
   if(CH_SENSOR_NIVEL)
-  le_nivel();
+    le_nivel();
 
   if(CH_RESISTENCIA)
-  le_condutividade();
+    aciona_resistencia();
+
+  // le_condutividade(); Ainda precisa ser implementado
 
   exibe_dados();
 }
 
 void le_informacao()
 {
+  // Lê as informações digitadas na interface serial e atualiza as variáveis do sistema
   while (Serial.available() > 0)
   {
-    // Lê primeiro byte digitado pelo usuário e atua no sistema
+    // Lê primeiro byte digitado pelo usuário
       switch (Serial.read())
       {
         if(CH_CONDUTIVIMETRO)
@@ -149,7 +133,6 @@ void le_informacao()
                     break;
       }
    }
-
 }
 
 void liga_motor()
@@ -182,10 +165,14 @@ void aciona_agitador()
 void le_nivel()
 {
   NIVEL = analogRead(A0);
+
   if(INDEX == 20)
-   INDEX = 0;
+    INDEX = 0;
+
   LEITURAS_NIVEL[INDEX] = NIVEL;
   NIVEL_APROXIMADO = filtro(20, NIVEL_APROXIMADO, LEITURAS_NIVEL);
+
+  INDEX++;
 }
 
 void le_condutividade()
@@ -197,17 +184,17 @@ float filtro(int tamanho, float media_anterior, float *leituras)
 {
   // filtra os valores do sensor de nível
 
-  int i = 0;
+  int i = 0, variacao = 2;
   float soma = 0, media = 0;
 
   for(i = 0; i < tamanho; i++)
-    soma += leituras[i];
+      soma += leituras[i];
 
   media = soma/tamanho;
 
   //filtra o valor da média com base em uma variação de valor = 2
-  if(!((media >= media_anterior+1) ||  (media <= media_anterior-1)))
-    media = media_anterior;
+  if(!((media >= (media_anterior + (variacao/2))) ||  (media <= (media_anterior-(variacao/2)))))
+      media = media_anterior;
 
   return media;
 }
@@ -242,7 +229,7 @@ void exibe_dados()
   if(CH_SENSOR_NIVEL)
   {
     Serial.print(" Nivel apoximado: ");
-    Serial.print(NIVEL_APROXIMADO);
+    Serial.print(NIVEL);
   }
 
   if(CH_CONDUTIVIMETRO)
