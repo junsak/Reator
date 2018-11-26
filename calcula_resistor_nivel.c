@@ -2,11 +2,11 @@
 
 int main(){
 
-int R1 = 1816, R2 = 750, R = 10, Rmax = 0, i = 0;  
-float i1, i2, Vd_anterior = 0, Vx, Vy, tensao = 17.5, Vot1, Vot2;
+int R1 = 1816, R2 = 750, R = 1000, Rmax = 0, i = 0;  
+float i1, i2, Vd_anterior = 0, Vx, Vy, tensao = 5, Vot1, Vot2;
 
 
-while(i<10000)
+while(i<1200 && R < 2000)
 {
 
 	i1 = tensao/(R1 + R);
