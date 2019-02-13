@@ -53,7 +53,7 @@ boolean CH_CONDUTIVIMETRO = 0;
 // VARIÁVEIS DO SISTEMA
 
 float TEMPERATURA, NIVEL, CONDUTIVIDADE;
-int VELOCIDADE_AGITADOR = 50, TEMPERATURA_RESISTENCIA = 50, PWM_BOMBA1 = 0;
+int VELOCIDADE_AGITADOR = 100, TEMPERATURA_RESISTENCIA = 50, PWM_BOMBA1 = 0;
 
 unsigned long time;
 unsigned long TEMPO_ATUAL;
@@ -100,7 +100,7 @@ void loop()
     aciona_resistencia();
 
   // le_condutividade(); Ainda precisa ser implementado
-
+  Serial.println("oi");
   exibe_dados();
 }
 
@@ -120,7 +120,7 @@ void le_informacao()
                     TEMPERATURA_RESISTENCIA = Serial.parseFloat();
                     break;
         case 'A':
-                    VELOCIDADE_AGITADOR = Serial.parseInt(); //faixa recomendada 200 - 800
+                    VELOCIDADE_AGITADOR = Serial.parseInt(); //faixa recomendada 100 - 700
                     break;
         case 'L':
                     break;
@@ -216,13 +216,13 @@ void exibe_dados()
 
   if(CH_RESISTENCIA)
   {
-    Serial.print(" Temperatura Resistência: ");
+    Serial.print(" Temperatura Resistencia: ");
     Serial.print(TEMPERATURA_RESISTENCIA);
   }
 
   if(CH_LIBERA_SENSOR_TEMPERATURA)
   {
-    Serial.print(" Temp ºC: ");
+    Serial.print(" Temp C: ");
     Serial.print(TEMPERATURA);
   }
 
