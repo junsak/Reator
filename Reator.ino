@@ -43,9 +43,9 @@ DeviceAddress ENDERECO_SENSOR_TEMPERATURA;
 // PAINEL DE CONTROLE
 
 boolean CH_LIGA_BOMBA1 = 1;
-boolean CH_LIBERA_SENSOR_TEMPERATURA = 1;
-boolean CH_RESISTENCIA = 1;
-boolean CH_HABILITA_AGITADOR = 1;
+boolean CH_LIBERA_SENSOR_TEMPERATURA = 0;
+boolean CH_RESISTENCIA = 0;
+boolean CH_HABILITA_AGITADOR = 0;
 boolean CH_SENSOR_NIVEL = 0;
 boolean CH_CONDUTIVIMETRO = 0;
 
@@ -100,7 +100,6 @@ void loop()
     aciona_resistencia();
 
   // le_condutividade(); Ainda precisa ser implementado
-  Serial.println("oi");
   exibe_dados();
 }
 
